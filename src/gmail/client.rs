@@ -10,7 +10,7 @@ use crate::gmail::labels::{LabelListResult, LabelManager};
 use crate::gmail::types::*;
 use crate::gmail::utils::{
     create_email_message, encode_raw_message, extract_attachments, extract_email_content,
-    find_header, EmailParams,
+    find_header, html_to_text, EmailParams,
 };
 
 use std::sync::Arc;
@@ -189,7 +189,9 @@ impl GmailClient {
             let html = if content.html.is_empty() { None } else { Some(content.html) };
             (content.text, html)
         } else if !content.html.is_empty() {
-            (content.html.clone(), Some(content.html))
+            // Convert HTML to readable text for the body
+            let text_from_html = html_to_text(&content.html);
+            (text_from_html, Some(content.html))
         } else {
             // Fallback to snippet if body extraction failed
             (snippet.unwrap_or_default(), None)

@@ -76,6 +76,116 @@ pub fn decode_base64url_string(data: &str) -> Result<String> {
     })
 }
 
+/// Convert HTML to readable plain text
+/// Strips tags and decodes common HTML entities
+pub fn html_to_text(html: &str) -> String {
+    let mut text = html.to_string();
+    
+    // Replace common block elements with newlines
+    let block_tags = ["<br>", "<br/>", "<br />", "</p>", "</div>", "</tr>", "</li>", "</h1>", "</h2>", "</h3>", "</h4>", "</h5>", "</h6>"];
+    for tag in block_tags {
+        text = text.replace(tag, "\n");
+    }
+    
+    // Replace list items with bullet points
+    text = text.replace("<li>", "• ");
+    
+    // Remove all remaining HTML tags
+    let mut result = String::new();
+    let mut in_tag = false;
+    let mut in_style = false;
+    let mut in_script = false;
+    
+    let chars: Vec<char> = text.chars().collect();
+    let mut i = 0;
+    
+    while i < chars.len() {
+        let c = chars[i];
+        
+        // Check for style/script start
+        if i + 6 < chars.len() {
+            let slice: String = chars[i..i+7].iter().collect();
+            if slice.to_lowercase() == "<style>" || slice.to_lowercase() == "<style " {
+                in_style = true;
+            }
+            if slice.to_lowercase() == "<script" {
+                in_script = true;
+            }
+        }
+        
+        // Check for style/script end
+        if i + 7 < chars.len() {
+            let slice: String = chars[i..i+8].iter().collect();
+            if slice.to_lowercase() == "</style>" {
+                in_style = false;
+                i += 8;
+                continue;
+            }
+        }
+        if i + 8 < chars.len() {
+            let slice: String = chars[i..i+9].iter().collect();
+            if slice.to_lowercase() == "</script>" {
+                in_script = false;
+                i += 9;
+                continue;
+            }
+        }
+        
+        if c == '<' {
+            in_tag = true;
+        } else if c == '>' {
+            in_tag = false;
+        } else if !in_tag && !in_style && !in_script {
+            result.push(c);
+        }
+        
+        i += 1;
+    }
+    
+    // Decode common HTML entities
+    result = result
+        .replace("&nbsp;", " ")
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("&apos;", "'")
+        .replace("&#x27;", "'")
+        .replace("&mdash;", "—")
+        .replace("&ndash;", "–")
+        .replace("&hellip;", "...")
+        .replace("&copy;", "©")
+        .replace("&reg;", "®")
+        .replace("&trade;", "™");
+    
+    // Collapse multiple whitespace/newlines
+    let mut prev_newline = false;
+    let mut prev_space = false;
+    let mut cleaned = String::new();
+    
+    for c in result.chars() {
+        if c == '\n' || c == '\r' {
+            if !prev_newline {
+                cleaned.push('\n');
+                prev_newline = true;
+            }
+            prev_space = false;
+        } else if c.is_whitespace() {
+            if !prev_space && !prev_newline {
+                cleaned.push(' ');
+                prev_space = true;
+            }
+        } else {
+            cleaned.push(c);
+            prev_newline = false;
+            prev_space = false;
+        }
+    }
+    
+    cleaned.trim().to_string()
+}
+
 /// Recursively extract email body content from MIME message parts
 pub fn extract_email_content(message_part: &MessagePart) -> EmailContent {
     let mut content = EmailContent::default();
