@@ -1,0 +1,70 @@
+[package]
+name = "gmail-mcp-server-rust"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "gmail_mcp_server_rust"
+path = "src/lib.rs"
+
+[[bin]]
+name = "gmail-mcp-server"
+path = "src/main.rs"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# HTTP client for Gmail API
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+
+# OAuth 2.0
+yup-oauth2 = "8"
+
+# JSON
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Email formatting
+lettre = "0.11"
+mail-builder = "0.3"
+
+# Encoding
+base64 = "0.21"
+
+# Error handling
+anyhow = "1"
+thiserror = "1"
+
+# Schema validation
+schemars = "0.8"
+validator = { version = "0.16", features = ["derive"] }
+
+# HTTP server for OAuth
+axum = "0.7"
+tower = "0.4"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# File paths
+dirs = "5"
+
+# URL encoding
+urlencoding = "2"
+
+# Open browser
+open = "5"
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
